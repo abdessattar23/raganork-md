@@ -135,6 +135,7 @@ async function sendButton(buttons,text,footer,message){
         if (!match) return await m.sendReply("_Need params!_\n_Eg: .setvar MODE:public_")
         let key = match.split(":")[0]
         let value =match.replace(key+":","").replace(/\n/g, '\\n')
+        config[key] = value
         if (isVPS){
         try { 
         var envFile = fs.readFileSync(`./config.env`).toString('utf-8')
@@ -155,7 +156,6 @@ async function sendButton(buttons,text,footer,message){
             return await m.sendReply("_Are you a VPS user? Check out wiki for more._\n"+e.message);
         }
         } else {
-            config[key] = value
             let set_res = await update(key,value)
             if (set_res) return await m.sendReply(`_Successfully set ${key} to ${value}, redeploying._`)
             else throw "Error!"
@@ -230,23 +230,11 @@ async function sendButton(buttons,text,footer,message){
     }, (async (message, match) => {
         if (match[1]!=="button_on" && match[1]!=="button_off"){
             var buttons = [
-            {buttonId: handler+'chatbot button_on', buttonText: {displayText: 'ON'}, type: 1},
-            {buttonId: handler+'chatbot button_off', buttonText: {displayText: 'OFF'}, type: 1}
-        ]
-        if (isVPS){
-            buttons = [
                 {buttonId: handler+'setvar CHATBOT:on', buttonText: {displayText: 'ON'}, type: 1},
                 {buttonId: handler+'setvar CHATBOT:off', buttonText: {displayText: 'OFF'}, type: 1}
             ]
         }
         return await sendButton(buttons,"*ChatBot control panel*","Chatbot is currently turned "+Config.CHATBOT+" now",message)
-        }
-        await message.sendReply(match[1].endsWith("n")? "*Chatbot activated ✅*" : "*Chatbot de-activated ✅*");
-        await heroku.patch(baseURI + '/config-vars', {
-            body: {CHATBOT: match[1].split("_")[1]}
-        }).catch(async (err) => {
-            await message.sendReply('```'+err.message+'```')
-        });
     }));
     Module({
         pattern: 'mode ?(.*)',

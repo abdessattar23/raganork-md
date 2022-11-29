@@ -155,8 +155,9 @@ async function sendButton(buttons,text,footer,message){
             return await m.sendReply("_Are you a VPS user? Check out wiki for more._\n"+e.message);
         }
         } else {
+            config[key] = value
             let set_res = await update(key,value)
-            if (set_res) return await m.sendReply(`_Successfully set ${key} to ${config[key]}, rebooting._`)
+            if (set_res) return await m.sendReply(`_Successfully set ${key} to ${value}, redeploying._`)
             else throw "Error!"
         }   
     }));
@@ -194,18 +195,9 @@ async function sendButton(buttons,text,footer,message){
         desc: Lang.GETVAR_DESC,
         use: 'owner'
     }, (async (message, match) => {
-    
         if (match[1] === '') return await message.sendReply(Lang.NOT_FOUND)
-        if (isVPS) return await message.sendReply(config[match[1].trim()]?.toString() || "Not found")
-        await heroku.get(baseURI + '/config-vars').then(async (vars) => {
-            for (vr in vars) {
-                if (match[1].trim() == vr) return await message.sendReply(vars[vr])
-            }
-            await await message.sendReply(Lang.NOT_FOUND)
-        }).catch(async (error) => {
-            await await message.send(error.message)
-        });
-    }));
+        return await message.sendReply(config[match[1].trim()]?.toString() || "Not found")
+   }));
     /*Module({
             pattern: "allvar",
             fromMe: true,

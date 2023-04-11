@@ -22,17 +22,21 @@
     "@adiwajshing/baileys": "git+https://github.com/souravkl11/Baileys.git",
     "@adiwajshing/keyed-db": "0.2.4",
     "acrcloud": "1.4.0",
+    "awesome-phonenumber": "5.3.0",
     "adm-zip": "0.5.9",
     "sequelize": "^6.13.0",
     "async-g-i-s": "1.0.0",
     "link-preview-js": "2.1.15",
     "mongodb": "^4.3.1",
     "node-cron": "3.0.1",
+    "image-to-pdf":"2.0.0",
     "node-webpmux": "^3.1.0",
     "pm2": "^5.2.2",
     "pg": "^8.5.1",
-    "raganork-bot": "3.0.0",
+    "raganork-bot": "^3.0.1",
     "sqlite3": "^5.0.0",
-    "string-crypto": "2.0.2"
+    "string-crypto": "2.0.2",
+    "google-tts-api": "2.0.2",
+    "badwords":"1.0.0"
   }
 }

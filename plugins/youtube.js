@@ -14,6 +14,7 @@ const {
   BOT_INFO
 } = require('../config');
 const ffmpeg = require('fluent-ffmpeg');
+// let parseBotJid = (id) => id+"@s.whatsapp.net";
 const {
   getString
 } = require('./misc/lang');
@@ -23,7 +24,7 @@ const {
   searchSong
 } = require('./misc/misc');
 const {
-    downloadYT, dlSong
+    ytTitle,downloadYT, dlSong, ytv, getResolutions
   } = require('./misc/yt');
 const Lang = getString('scrapers');
 const {
@@ -33,64 +34,114 @@ const {
   addInfo
 } = require('raganork-bot');
 var handler = HANDLERS !== 'false'?HANDLERS.split("")[0]:""
-let sourav = MODE == 'public' ? false : true
+let fm = MODE == 'public' ? false : true
 const getID = /(?:http(?:s|):\/\/|)(?:(?:www\.|)youtube(?:\-nocookie|)\.com\/(?:watch\?.*(?:|\&)v=|embed|shorts\/|v\/)|youtu\.be\/)([-_0-9A-Za-z]{11})/;
-const _0x41008c=_0x3ae3;function _0xd4fa(){const _0x5bdefb=['1294408DHqvEu','ei.','pow','rou','pip','Wri','[ER','7BJYJkG','now','inf','ng\x20','[RA','aud','rti','log','492084MTTUKY','Sta','5748gmZdRB','flo','615OmNMVK','GAN','err','70XlcmNR','Byt','.mp','23949jEFBLZ','2735lexahw','\x20MD','cre','990957WWpZMm','end','3889860OYOeFF','14748XQFYtT','ate','nlo','you'];_0xd4fa=function(){return _0x5bdefb;};return _0xd4fa();}(function(_0x39ae56,_0x2065fc){const _0x196875=_0x3ae3,_0x431ef0=_0x39ae56();while(!![]){try{const _0x270c89=-parseInt(_0x196875(0xa2))/0x1+-parseInt(_0x196875(0x9a))/0x2*(-parseInt(_0x196875(0x9c))/0x3)+parseInt(_0x196875(0xa8))/0x4+-parseInt(_0x196875(0xa3))/0x5*(parseInt(_0x196875(0xa9))/0x6)+-parseInt(_0x196875(0x90))/0x7*(-parseInt(_0x196875(0xad))/0x8)+-parseInt(_0x196875(0x98))/0x9+parseInt(_0x196875(0x9f))/0xa*(parseInt(_0x196875(0xa6))/0xb);if(_0x270c89===_0x2065fc)break;else _0x431ef0['push'](_0x431ef0['shift']());}catch(_0x371d20){_0x431ef0['push'](_0x431ef0['shift']());}}}(_0xd4fa,0xe344e));const Innertube=require(_0x41008c(0xac)+'tub'+_0x41008c(0xae)+'js');async function getSong(_0xddf016){return new Promise(async(_0x348af6,_0x289295)=>{const _0x29d4cf=_0x3ae3,_0x2c2939=await new Innertube();function _0x2fb97e(_0x748208){const _0x29cd6e=_0x3ae3;var _0x26bcd3=[_0x29cd6e(0xa0)+'es','KB','MB','GB','TB'];if(_0x748208==0x0)return'0\x20B'+'yte';var _0x470606=parseInt(Math[_0x29cd6e(0x9b)+'or'](Math[_0x29cd6e(0x97)](_0x748208)/Math[_0x29cd6e(0x97)](0x400)));return Math[_0x29cd6e(0xb0)+'nd'](_0x748208/Math[_0x29cd6e(0xaf)](0x400,_0x470606),0x2);}const _0x147b2f=_0x2c2939['dow'+_0x29d4cf(0xab)+'ad'](_0xddf016,{'format':'mp4','quality':'','type':_0x29d4cf(0x95)+'io'});_0x147b2f[_0x29d4cf(0xb1)+'e'](fs[_0x29d4cf(0xa5)+_0x29d4cf(0xaa)+_0x29d4cf(0xb2)+'teS'+'tre'+'am']('./'+_0xddf016+(_0x29d4cf(0xa1)+'4'))),_0x147b2f['on']('sta'+'rt',()=>{const _0x30067b=_0x29d4cf;console[_0x30067b(0x92)+'o'](_0x30067b(0x94)+_0x30067b(0x9d)+'ORK'+_0x30067b(0xa4)+']',_0x30067b(0x99)+_0x30067b(0x96)+_0x30067b(0x93)+_0x30067b(0x91)+'!');}),_0x147b2f['on'](_0x29d4cf(0xa7),()=>{_0x348af6('./'+_0xddf016+('.mp'+'4'));}),_0x147b2f['on'](_0x29d4cf(0x9e)+'or',_0x40a884=>console['err'+'or'](_0x29d4cf(0xb3)+'ROR'+']',_0x40a884));});}function _0x3ae3(_0x561ef7,_0x9f82e9){const _0xd4fa42=_0xd4fa();return _0x3ae3=function(_0x3ae36b,_0x5f5dc8){_0x3ae36b=_0x3ae36b-0x90;let _0x428616=_0xd4fa42[_0x3ae36b];return _0x428616;},_0x3ae3(_0x561ef7,_0x9f82e9);};
 Module({
-  pattern: 'song ?(.*)',
-  fromMe: sourav,
-  desc: Lang.SONG_DESC,
+  pattern: 'play ?(.*)',
+  fromMe: fm,
+  desc: "Play audios from YouTube",
+  usage:'.play starboy',
   use: 'download'
 }, (async (message, match) => {
-  if (!match[1]) return message.sendReply(Lang.NEED_TEXT_SONG)
-  var link = match[1].match(/\bhttps?:\/\/\S+/gi)
-  if (link !== null && getID.test(link[0])) {
-  try {
-     var {
-      thumbnail,title,size,url
-  } = await downloadYT(link[0],'audio');
-  // Method 1: Via y2mate
-  if (url!== "http://app.y2mate.com/download"){
-  await message.sendReply(`*Downloading:* _${title} *[${size}]*_`)
- await fs.writeFileSync('./song.mp3',await skbuffer(url))
-  var song_data = await addInfo('./song.mp3',title,BOT_INFO.split(";")[0],"Raganork audio downloader",await skbuffer(thumbnail))
-  return await message.client.sendMessage(message.jid, {
-      audio:song_data,
-      mimetype: 'audio/mp4'
-  }, {
-      quoted: message.data
-  });  
-}
-} catch {
-  // Method 2: Direct Download from YT
-  const core = require('youtubei.js');
-  const yt = await new core({ gl: 'US' });
-  var {title} = await yt.getDetails(link[0].match(getID)[1]);
+if (!match[1]) return message.sendReply("_Need song name, eg: .play starboy_")
+let sr = (await searchYT(match[1])).videos[0];
+  const title = await ytTitle(sr.id)
   await message.sendReply(`*Downloading:* _${title}_`)
-  var song = await dlSong(link[0].match(getID)[1]);
-  ffmpeg(song)
- .save('./song.mp3')
- .on('end', async () => {
-  var song = await addInfo('./song.mp3',title,BOT_INFO.split(";")[0],"Raganork audio downloader",await skbuffer(`https://i3.ytimg.com/vi/${link[0].match(getID)[1]}/maxresdefault.jpg`))
+  let sdl = await dlSong(sr.id);
+  ffmpeg(sdl)
+  .save('./temp/song.mp3')
+  .on('end', async () => { 
+  var song = await addInfo('./temp/song.mp3',title,BOT_INFO.split(";")[0],"Raganork audio downloader",await skbuffer(`https://i3.ytimg.com/vi/${sr.id}/hqdefault.jpg`))
   return await message.client.sendMessage(message.jid, {
       audio:song,
       mimetype: 'audio/mp4'
   }, {
       quoted: message.data
   });
-});    
-  }}
+});
+}));
+/*
+
+IN CASE IF BUTTONS TO COME BACK!
+
+Module({
+  pattern: 'ytv ?(.*)',
+  fromMe: fm,
+  desc: Lang.YTV_DESC,
+  use: 'download'
+}, (async (message, match) => {
+  if (!match[1]) return message.sendReply("_Need YouTube video link!_")
+  if (match[1].startsWith('dl;')){
+    const link = match[1].split(';')[2]
+    const res_ = match[1].split(';')[1]
+    const result__ = await ytv(link,res_)
+    const title = await ytTitle(link)
+    return await message.client.sendMessage(message.jid,{video:result__,caption:`_${title} *[${res_}]*_`},{quoted:message.data}) 
+  }
+  var link = match[1].match(/\bhttps?:\/\/\S+/gi)
+  if (link !== null && getID.test(link[0])) {
+  link = link[0].match(getID)[1]
+  var rows = []
+  const result_ = await getResolutions(link)
+  for (var i of result_){
+    rows.push({
+      title:i.fps60?i.quality+' 60fps':i.quality,
+      description:i.size,
+      rowId: handler+"ytv dl;"+(i.fps60?i.quality+'60':i.quality)+';'+link
+  })
+  }
+  const sections = [{
+      title:'Select a resolution',
+      rows:rows
+  }];
+  const listMessage = {
+      text: " ",
+      title: "Select a quality",
+      buttonText: "View all",
+      sections
+  }
+ return await message.client.sendMessage(message.jid, listMessage,{quoted: message.data})
+}
+}));
+Module({
+  pattern: 'song ?(.*)',
+  fromMe: fm,
+  desc: Lang.SONG_DESC,
+  use: 'download'
+}, (async (message, match) => {
+  if (!match[1]) return message.sendReply(Lang.NEED_TEXT_SONG)
+  var link = match[1].match(/\bhttps?:\/\/\S+/gi)
+  if (link !== null && getID.test(link[0])) {
+  let v_id = link[0].match(getID)[1]
+  const title = await ytTitle(v_id);
+  await message.sendReply(`*Downloading:* _${title}_`)
+  let sdl = await dlSong(v_id);
+  ffmpeg(sdl)
+  .save('./temp/song.mp3')
+  .on('end', async () => { 
+  var song = await addInfo('./temp/song.mp3',title,BOT_INFO.split(";")[0],"Raganork audio downloader",await skbuffer(`https://i3.ytimg.com/vi/${link[0].match(getID)[1]}/hqdefault.jpg`))
+  return await message.client.sendMessage(message.jid, {
+      audio:song,
+      mimetype: 'audio/mp4'
+  }, {
+      quoted: message.data
+  });
+ }); 
+} else {
   var myid = message.client.user.id.split("@")[0].split(":")[0]
-  let sr = await searchYT(match[1]);
-  sr = sr.videos;
+  var sr = await searchYT(match[1]);
+  sr = sr.videos.splice(0,21);
   if (sr.length < 1) return await message.sendReply(Lang.NO_RESULT);
   var SongData = []
   for (var i in sr){
+    const title = sr[i].title?.text
+    if (title){
     SongData.push({
-      title: sr[i].title,
+      title,
       description: sr[i].artist,
       rowId: handler+"song https://youtu.be/" + sr[i].id
   })
+  }
   }
   const sections = [{
       title: Lang.MATCHING_SONGS,
@@ -98,16 +149,17 @@ Module({
   }];
   const listMessage = {
       text: "and "+(sr.length-1)+" more results..",
-      footer: "user: " + message.data.pushName,
-      title: sr[0].title,
+      title: sr[0].title.text,
       buttonText: "Select song",
       sections
   }
-  await message.client.sendMessage(message.jid, listMessage,{quoted: message.data})
+ return await message.client.sendMessage(message.jid, listMessage,{quoted: message.data})
+}
 }));
+
 Module({
   pattern: 'yts ?(.*)',
-  fromMe: sourav,
+  fromMe: fm,
   desc: "Select and download songs from yt (list)",
   use: 'search'
 }, (async (message, match) => {
@@ -135,23 +187,239 @@ return await message.client.sendMessage(message.jid, buttonMessage)
   sr = sr.videos;
   if (sr.length < 1) return await message.sendReply("*No results found!*");
   var videos = [];
-  for (var index = 0; index < sr.length; index++) {
-      videos.push({
-          title: sr[index].title,
-          description: sr[index].metadata.duration.accessibility_label,
+  for (var index in sr) {
+    const title = sr[index].title?.text  
+    if (title){
+    videos.push({
+          title,
+          description: sr[index].duration?.text,
           rowId: handler+"yts https://youtu.be/" + sr[index].id
       });
-  }
+      }  }
   const sections = [{
       title: "YouTube search resulrs",
       rows: videos
   }]
   const listMessage = {
       text: "and " + (sr.length - 1) + " more results...",
-      footer: "user: " + message.data.pushName,
-      title: sr[0].title,
+      title: sr[0].title.text,
       buttonText: "Select a video",
       sections
   }
   await message.client.sendMessage(message.jid, listMessage,{quoted: message.data})
 }));
+*/
+Module({
+  pattern: 'ytv ?(.*)',
+  fromMe: fm,
+  desc: Lang.YTV_DESC,
+  use: 'download'
+}, (async (message, match) => {
+  if (!match[1]) return message.sendReply("_Need YouTube video link!_")
+  if (match[1].startsWith('dl;')){
+    const link = match[1].split(';')[2]
+    const res_ = match[1].split(';')[1]
+    const result__ = await ytv(link,res_)
+    const title = await ytTitle(link)
+    return await message.client.sendMessage(message.jid,{video:result__,caption:`_${title} *[${res_}]*_`},{quoted:message.data}) 
+  }
+  var link = match[1].match(/\bhttps?:\/\/\S+/gi)
+  if (link !== null && getID.test(link[0])) {
+  link = link[0].match(getID)[1]
+  var list = `_*Available quality resolutions:*_\n_video_id: ${link}_\n`
+  const result_ = await getResolutions(link)
+  for (var i in result_){
+    list+=`${(parseInt(i)+1)}. _*${result_[i].fps60?result_[i].quality+' 60fps':result_[i].quality} (${result_[i].size})*_\n`
+  }
+    list+=`\n_Send number as reply to download_`
+ return await message.sendReply(list)
+}
+}));
+
+Module({
+  pattern: 'song ?(.*)',
+  fromMe: fm,
+  desc: Lang.SONG_DESC,
+  use: 'download'
+}, (async (message, match) => {
+  if (!match[1]) return message.sendReply(Lang.NEED_TEXT_SONG)
+  var link = match[1].match(/\bhttps?:\/\/\S+/gi)
+  if (link !== null && getID.test(link[0])) {
+  let v_id = link[0].match(getID)[1]
+  const title = await ytTitle(v_id);
+  await message.sendReply(`*Downloading:* _${title}_`)
+  let sdl = await dlSong(v_id);
+  ffmpeg(sdl)
+  .save('./temp/song.mp3')
+  .on('end', async () => { 
+  var song = await addInfo('./temp/song.mp3',title,BOT_INFO.split(";")[0],"Raganork audio downloader",await skbuffer(`https://i3.ytimg.com/vi/${link[0].match(getID)[1]}/hqdefault.jpg`))
+  return await message.client.sendMessage(message.jid, {
+      audio:song,
+      mimetype: 'audio/mp4'
+  }, {
+      quoted: message.data
+  });
+ }); 
+} else {
+  var myid = message.client.user.id.split("@")[0].split(":")[0]
+  var sr = await searchYT(match[1]);
+  sr = sr.videos.splice(0,20);
+  if (sr.length < 1) return await message.sendReply(Lang.NO_RESULT);
+  var list = `_*Results matching "${match[1]}":*_\n\n` // format using Lang.MATCHING_SONGS
+  var _i = 0;
+  for (var i in sr){
+    const title = sr[i].title?.text
+    const dur = sr[i].thumbnail_overlays[0]?.text
+    if (title && dur){
+      _i++
+      list+=`${_i}. *_${title} (${dur})_*\n`
+  }
+  }
+  list+=`\n_Send number as reply to download_`
+  return await message.sendReply(list)
+}
+}));
+Module({
+  pattern: 'yts ?(.*)',
+  fromMe: fm,
+  desc: "Select and download songs from yt (list)",
+  use: 'search'
+}, (async (message, match) => {
+  if (!match[1]) return message.sendReply("*Need words*")
+  var link = match[1].match(/\bhttps?:\/\/\S+/gi)
+  if (link !== null && getID.test(link[0])) {
+    var {
+  info,
+  thumbnail
+} = await getJson("https://raganork-network.vercel.app/api/youtube/details?video_id=" +link[0].split("/")[3]);
+const Message = {
+    image: {url: thumbnail},
+    caption: info+`\n\n1. 𝗔𝗨𝗗𝗜𝗢\n2. 𝗩𝗜𝗗𝗘𝗢`
+}
+return await message.client.sendMessage(message.jid,Message)
+  }
+  let sr = await searchYT(match[1]);
+  sr = sr.videos.splice(0,20);
+  if (sr.length < 1) return await message.sendReply("*No results found!*");
+  var list = `_*Search results for ${match[1]}:*_\n\n`
+  var _i = 0;
+  for (var i in sr){
+    const title = sr[i].title?.text
+    const dur = sr[i].thumbnail_overlays?.[0]?.text
+    if (title && dur){
+      _i++
+      list+=`${_i}. *_${title} (${dur})_*\n`
+  }
+  }
+  list+=`\n_Send number as reply to download_`
+  return await message.sendReply(list)
+  }));
+
+// Reply listeners:
+
+
+async function parseReply(reply,no_){
+  let YT_BASEURL = "https://youtu.be/{}"
+  if (reply?.includes("ᴄʜᴀɴɴᴇʟ")){
+    let regex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=)?([a-zA-Z0-9_-]{11})\b/g;
+    let matches = reply.match(regex)
+    return matches[0].match(getID)[1]
+  }
+  if (reply?.includes("Available quality")){
+    var query = reply.split("\n").filter(x=>x.startsWith(`${no_}.`))?.[0]?.replace(`${no_}. `,"").trim().replace(/(\*\_|_\*)/g,"")  
+    query = (query.replace(query.match(/\([^)]+\)/g)[(query.match(/\([^)]+\)/g)).length-1],"")).trim()
+    var videoID = reply.split("\n").filter(x=>x.startsWith(`_video_id`))?.[0]?.split(" ")[1].trim().replace(/_+$/, "");  
+    return {res:query,videoID}
+  }
+  var query = reply.split("\n").filter(x=>x.startsWith(`${no_}.`))?.[0]?.replace(`${no_}. `,"").trim().replace(/(\*\_|_\*)/g,"")
+  if (!query) throw "_Invalid number, only 20 results are given!_"
+  query = (query.replace(query.match(/\([^)]+\)/g)[(query.match(/\([^)]+\)/g)).length-1],"")).trim()
+  var sr = await searchYT(query);
+  sr = sr.videos.splice(0,20)
+  sr = sr.filter(x=>x.title?.text == (query))[0]
+  if (!sr?.id) throw "_No results found!_"
+  // let link = YT_BASEURL.format(sr?.id)
+  return sr?.id         
+}
+
+Module({
+  on: 'text',
+  fromMe: fm
+  }, (async (message, match) => {
+  if (message.reply_message){
+    try {
+  let reply = message.reply_message?.text || message.quoted?.message?.imageMessage?.caption;
+    if (reply!==undefined && !!reply && message.quoted.key.id.startsWith("BAE") && message.quoted.key.participant.includes(message.myjid)){
+      var no_ = /\d+/.test(message.message) ? message.message.match(/\d+/)[0] : false
+      if (!no_) throw "_Reply must be  a number_";
+          if (reply?.includes("Search results")){
+            let videoID = await parseReply(reply,no_);
+            var {
+              info,
+              thumbnail
+            } = await getJson("https://raganork-network.vercel.app/api/youtube/details?video_id=" +videoID);
+            const Message = {
+                image: {url: thumbnail},
+                caption: info+`\n\n1. 𝗔𝗨𝗗𝗜𝗢\n2. 𝗩𝗜𝗗𝗘𝗢`
+            }
+            return await message.client.sendMessage(message.jid,Message)
+            }            
+          }
+          if (reply?.includes("Available quality")){
+              let {res,videoID} = await parseReply(reply,no_);
+              const result__ = await ytv(videoID,res)
+              const title = await ytTitle(videoID)
+              return await message.client.sendMessage(message.jid,{video:result__,caption:`_${title} *[${res}]*_`},{quoted:message.data}) 
+          }
+          if (reply?.includes("Results matching")){
+            let videoID = await parseReply(reply,no_);
+              const title = await ytTitle(videoID);
+              await message.sendReply(`*Downloading:* _${title}_`)
+              let sdl = await dlSong(videoID);
+              ffmpeg(sdl)
+              .save('./temp/song.mp3')
+              .on('end', async () => { 
+              var song = await addInfo('./temp/song.mp3',title,BOT_INFO.split(";")[0],"Raganork audio downloader",await skbuffer(`https://i3.ytimg.com/vi/${videoID}/hqdefault.jpg`))
+              return await message.client.sendMessage(message.jid, {
+                  audio:song,
+                  mimetype: 'audio/mp4'
+              }, {
+                  quoted: message.data
+              });
+             }); 
+          }
+          if (reply?.includes("ᴄʜᴀɴɴᴇʟ")){
+            if (no_ == 1){
+              let videoID = await parseReply(reply,no_);
+              const title = await ytTitle(videoID);
+              await message.sendReply(`*Downloading:* _${title}_`)
+              let sdl = await dlSong(videoID);
+              ffmpeg(sdl)
+              .save('./temp/song.mp3')
+              .on('end', async () => { 
+              var song = await addInfo('./temp/song.mp3',title,BOT_INFO.split(";")[0],"Raganork audio downloader",await skbuffer(`https://i3.ytimg.com/vi/${videoID}/hqdefault.jpg`))
+              return await message.client.sendMessage(message.jid, {
+                  audio:song,
+                  mimetype: 'audio/mp4'
+              }, {
+                  quoted: message.data
+              });
+             }); 
+            } else if (no_ == 2){
+              let videoID = await parseReply(reply,no_);
+              await message.sendReply("_Downloading video..._")
+              const video = await ytv(videoID)
+              const caption = "_"+(await ytTitle(videoID))+"_"
+              return await message.client.sendMessage(message.jid, {
+              video,
+              mimetype: "video/mp4",
+              caption,
+              thumbnail: await skbuffer(`https://i.ytimg.com/vi/${videoID}/hqdefault.jpg`)
+        },{quoted:message.data});
+            } else throw "_Invalid number, reply 1 for audio and 2 for video_"
+          }
+        } catch (error) {
+          console.log("")
+        }  
+      }
+  }));

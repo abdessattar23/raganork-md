@@ -11,6 +11,7 @@ const {
 } = require('@adiwajshing/baileys');
 const fs = require('fs');
 const got = require("got");
+const { fromBuffer } = require('file-type');
 const axios = require('axios');
 const setting = require('../config');
 const {
@@ -58,7 +59,9 @@ Module({
         if (res == false) return await msg.sendReply("*Download failed*");
         var quoted = msg.reply_message ? msg.quoted : msg.data
         for (var i in res) {
-        await msg.client.sendMessage(msg.jid,{[res[i].includes("mp4")?'video':'image']:{url:res[i]}},{quoted})
+            let media = await skbuffer(res[i])
+            let {mime} = await fromBuffer(media)
+            await msg.client.sendMessage(msg.jid,{[mime.includes("video")?'video':'image']:media},{quoted})
         };
     }
 }));
@@ -73,23 +76,8 @@ Module({
      let _q = !msg.reply_message.message ? query[1] : msg.reply_message.message
      if (/\bhttps?:\/\/\S+/gi.test(q)) q = q.match(/\bhttps?:\/\/\S+/gi)[0]
      if (!q) return await msg.sendReply("*Need Facebook link*")
-     if (!_q.includes("!")){
-const buttons = [
-  {buttonId: hnd+'fb '+q+' !hd', buttonText: {displayText: 'HD'}, type: 1},
-  {buttonId: hnd+'fb '+q+' !sd', buttonText: {displayText: 'SD'}, type: 1}
- ]
-const buttonMessage = {
-    text: "*Select video quality*",
-    footer: '',
-    buttons: buttons,
-    headerType: 1
-}
- await msg.client.sendMessage(msg.jid, buttonMessage,{quoted:msg.data})
-     }
-    if (_q.includes("!")){
      var res = await fb(q);
-     return await msg.sendReply({url: res[_q.split("!")[1]]},"video")
-     }
+     return await msg.sendReply({url: res['hd']},"video")
         }));
 Module({
     pattern: 'ig ?(.*)',
@@ -171,12 +159,8 @@ Module({
     if (!user) return await msg.sendReply("*Need url*");
     if (/\bhttps?:\/\/\S+/gi.test(user)) user = user.match(/\bhttps?:\/\/\S+/gi)[0]
     try { var res = await pin(user) } catch {return await msg.sendReply("*Server error*")}
-    await msg.sendMessage('_Downloading ' + res.data.length + ' medias_');
     var quoted = msg.reply_message ? msg.quoted : msg.data
-    for (var i of res.data){
-        var type = i.url.includes("mp4") ? "video" : "image"
-        await msg.client.sendMessage(msg.jid,{[type]:{url:i.url }},{quoted})
-    }
+    await msg.client.sendMessage(msg.jid,{[res.endsWith('jpg')?'image':'video']:{url:res}},{quoted})
 }));
 Module({
     pattern: 'tiktok ?(.*)',
@@ -186,22 +170,20 @@ Module({
     use: 'download'
 }, (async (msg, query) => {
     var link = query[1] !== '' ? query[1] : msg.reply_message.text;
-    if (!link) return await msg.sendReply("*Need a tiktok url*");
+    if (!link) return await msg.sendReply("_Need a tiktok url_");
     link = link.match(/\bhttps?:\/\/\S+/gi)[0]
-    try { var res = await tiktok(link) } catch {return await msg.sendReply("*Server error*")}
-    var buttons = [{
-        quickReplyButton: {
-            displayText: 'No WM',
-            id: 'tktk nowm '+msg.myjid+' '+res.nowm
-        }
-    }, {
-        quickReplyButton: {
-            displayText: 'With WM',
-            id: 'tktk wm '+msg.myjid+' '+res.wm
-        }  
-    }]
-    await msg.sendImageTemplate(await skbuffer("https://d15shllkswkct0.cloudfront.net/wp-content/blogs.dir/1/files/2018/10/tiktok.jpeg"),"*TikTok video downloader*","Choose your format:",buttons);
-    }));
+    const buttons = [
+        {buttonId: hnd+'upload '+'https://api.akuari.my.id/downloader/tiktoknowm?link='+link, buttonText: {displayText: 'No watermark'}, type: 1},
+        {buttonId: hnd+'upload '+'https://api.akuari.my.id/downloader/tiktokwithwm?link='+link, buttonText: {displayText: 'With watermark'}, type: 1}
+       ]
+      const buttonMessage = {
+          text: "_Select video type_",
+          footer: '',
+          buttons: buttons,
+          headerType: 1
+      }
+       await msg.client.sendMessage(msg.jid, buttonMessage,{quoted:msg.data})
+      }));
     Module({
         on: 'button',
         fromMe: sourav

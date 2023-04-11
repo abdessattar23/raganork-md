@@ -3,19 +3,19 @@ Licensed under the  GPL-3.0 License;
 you may not use this file except in compliance with the License.
 Raganork MD - Sourav KL11
 */
-const googleTTS = require('google-translate-tts');
 const {
     MODE,
     HANDLERS
 } = require('../config');
 var handler = HANDLERS !== 'false'?HANDLERS.split("")[0]:"";
+var badwordsRegExp = require('badwords/regexp');
 const {
     getString
 } = require('./misc/lang');
+const {ChatGPT, Davinci} = require('./misc/AI');
 const {
-    sendYtQualityList,
-    processYtv,
-    getJson
+    getJson,
+    gtts
 } = require('./misc/misc');
 const gis = require('async-g-i-s');
 const axios = require('axios');
@@ -37,7 +37,7 @@ const {
     skbuffer
 } = require('raganork-bot');
 const LanguageDetect = require('languagedetect');
-const { downloadYT } = require('./misc/yt');
+const { downloadYT,ytv,ytTitle } = require('./misc/yt');
 const lngDetector = new LanguageDetect();
 async function extractGoogleImage(url){
 var result = (await axios(url)).data
@@ -71,9 +71,12 @@ Module({
 }, async (message, match) => {
     var query = match[1] || message.reply_message.text
     if (!query) return await message.sendReply(Lang.TTS_NEED_REPLY);
+    if (!fs.existsSync("./temp/tts")) {
+        fs.mkdirSync("./temp/tts")
+    }
     query = query.replace("tts","")
     var lng = 'en';
-    if (/[^\x00-\x7F]+/.test(query)) lng = 'ml';
+    if (/[\u0D00-\u0D7F]+/.test(query)) lng = 'ml';
     let
         LANG = lng,
         ttsMessage = query,
@@ -87,35 +90,19 @@ Module({
         ttsMessage = ttsMessage.replace(speedMatch[0], "")
     }
     try {
-        var buffer = await googleTTS.synthesize({
-            text: ttsMessage,
-            voice: LANG
-        });
+        var audio = await gtts(ttsMessage,LANG)
     } catch {
         return await message.sendReply("_"+Lang.TTS_ERROR+"_")
     }
     await message.client.sendMessage(message.jid, {
-        audio: buffer,
+        audio,
         mimetype: 'audio/mp4',
-        ptt: false
+        ptt: true,
+        waveform: Array.from({length: 40}, () => Math.floor(Math.random() * 99))
     }, {
         quoted: message.data
-    });
+    }); 
 });
-Module({
-    pattern: 'ytv ?(.*)',
-    fromMe: w,
-    desc: Lang.YTV_DESC,
-    use: 'download'
-}, (async (message, match) => {
-    await sendYtQualityList(message, match);
-}));
-Module({
-    on: 'button',
-    fromMe: w
-}, (async (message, match) => {
-    await processYtv(message);
-}));
 Module({
     pattern: 'img ?(.*)',
     fromMe: w,
@@ -125,12 +112,40 @@ Module({
     if (!match[1]) return await message.sendReply(Lang.NEED_WORD);
     var count = parseInt(match[1].split(",")[1]) || 5
     var query = match[1].split(",")[0] || match[1];
+    if (badwordsRegExp.test(query)) return await message.sendReply(`_The word "${query.match(badwordsRegExp)}" is blocked!_`)
     const results = await gis(query);
         await message.sendReply(Lang.IMG.format(results.splice(0, count).length, query))
         for (var i = 0; i < (results.length < count ? results.length : count); i++) {
-         try { var buff = await skbuffer(results[i].url); } catch { var buff = await skbuffer("https://miro.medium.com/max/800/1*hFwwQAW45673VGKrMPE2qQ.png") }
-         await message.send(buff, 'image');
+         try { var buff = await skbuffer(results[i].url); } catch {
+		 count++
+	        var buff = false
+	 }
+         if (buff) await message.send(buff, 'image');
         }
+}));
+Module({
+    pattern: 'gpt ?(.*)',
+    fromMe: w,
+    desc: "OpenAI's ChatGPT's official languauge model, used for text generation, researches, and natural conversations",
+    use: 'AI',
+    usage: '.gpt Write a short note about Lionel Messi'
+}, (async (message, match) => {
+    if (!match[1]) return await message.sendReply("Need any query!");
+    if (!process.env.OPENAI_KEY) return await message.sendReply("_No OpenAI API key found. Get an API key:_\n\n_1. Create an account: https://platform.openai.com/signup/_\n\n_2. Then, open this url: https://platform.openai.com/account/api-keys and copy api key_\n\n_3. Add the key into OPENAI_KEY var using .setvar_\n\n_(Eg: .setvar OPENAI_KEY:yourkeyhere )_" )
+    const {text} = await ChatGPT(match[1],process.env.OPENAI_KEY)
+    return await message.sendReply(text || "_No response returned, please try again_")
+}));
+Module({
+    pattern: 'davinci ?(.*)',
+    fromMe: w,
+    desc: "OpenAI's yet another languauge model, best model for text generation and better prompt analysis",
+    use: 'AI',
+    usage: '.gpt Write a short note about Lionel Messi'
+}, (async (message, match) => {
+    if (!match[1]) return await message.sendReply("Need any query!");
+    const result = await Davinci(match[1])
+    const text = result.result?result.result:result;
+    return await message.sendReply(text)
 }));
 Module({
     pattern: 'zipcode ?(.*)',
@@ -229,19 +244,14 @@ Module({
     if (!s1) return await message.sendReply("*"+Lang.NEED_VIDEO+"*");
     if (!s1.includes('youtu')) return await message.sendReply("*"+Lang.NEED_VIDEO+"*");
     const getID = /(?:http(?:s|):\/\/|)(?:(?:www\.|)youtube(?:\-nocookie|)\.com\/(?:watch\?.*(?:|\&)v=|embed|shorts\/|v\/)|youtu\.be\/)([-_0-9A-Za-z]{11})/
-    var qq = getID.exec(s1)
-        var {
-            url,
-            thumbnail,
-            title
-        } = await downloadYT(qq[1]);
-        return await message.client.sendMessage(message.jid, {
-            video: {
-                url: url
-            },
+    var vid = getID.exec(s1)[1]
+    const video = await ytv(vid)
+    const caption = await ytTitle(vid)    
+    return await message.client.sendMessage(message.jid, {
+            video,
             mimetype: "video/mp4",
-            caption: title,
-            thumbnail: await skbuffer(thumbnail)
+            caption,
+            thumbnail: await skbuffer(`https://i.ytimg.com/vi/${vid}/hqdefault.jpg`)
         },{quoted:message.data});
     });
 Module({
